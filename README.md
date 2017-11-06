@@ -1,29 +1,17 @@
-# truffle-init-webpack
-Example webpack project with Truffle. Includes contracts, migrations, tests, user interface and webpack build pipeline.
+# An Ethereum based Auction
+This is a sample code showing different features and approach to creating and Auction using 
+- Solidity
+- Truffle
+- JQuery
+- Private Chain (or any other eth network, I have used private)
 
-## Usage
+Using the xxxFactory you can create and auction of <Product>. 
+The product instance will have specified number of tickets to be auctioned.
+Some basic validations are implemented and events raised to indicate errors.
+ 
+The code for polling for the receipt till the transaction is commited in n blocks is taken from here:
+https://ethereum.stackexchange.com/questions/1187/how-can-a-dapp-detect-a-fork-or-chain-reorganization-using-web3-js-or-additional
 
-To initialize a project with this example, run `truffle init webpack` inside an empty directory.
+This is a work in progress, or I may stop working on this once I feel I have got engouh info. For now and I am no UI guy so the screens will look crappy.
 
-## Building and the frontend
-
-1. First run `truffle compile`, then run `truffle migrate` to deploy the contracts onto your network of choice (default "development").
-1. Then run `npm run dev` to build the app and serve it on http://localhost:8080
-
-## Possible upgrades
-
-* Use the webpack hotloader to sense when contracts or javascript have been recompiled and rebuild the application. Contributions welcome!
-
-## Common Errors
-
-* **Error: Can't resolve '../build/contracts/MetaCoin.json'**
-
-This means you haven't compiled or migrated your contracts yet. Run `truffle compile` and `truffle migrate` first.
-
-Full error:
-
-```
-ERROR in ./app/main.js
-Module not found: Error: Can't resolve '../build/contracts/MetaCoin.json' in '/Users/tim/Documents/workspace/Consensys/test3/app'
- @ ./app/main.js 11:16-59
-```
+This will cover all the basic features that one would need while building a simple dApp using ETH
