@@ -4,11 +4,140 @@
   <title>Product Auction Factory</title>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
   <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 </head>
 <title>Auction Admin</title>
 <body class="container">
-  <h1>Auction Generator Admin</h1>
-  
+  <div class="table-responsive" id='msg'>
+    
+  </div>
+  <div id="accordion">
+  <h3>Create An Auction</h3>
+ <div class="table-responsive">
+ <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Auctioneer Address</td>
+          <td><input type="text" id="auctioneerId" value="0xE7D4fb00EA93027a10101A48F9b791626f232Ac6"/></td>
+        </tr>
+        <tr>
+          <td>Total Tickets</td>
+          <td><input type="text" id="totakTickets" value="5"/></td>
+        </tr>
+        <tr>
+          <td>Tickets Per Person</td>
+          <td><input type="text" id="ticketsPerPerson" value="5"/></td>
+        </tr>
+        <tr>
+          <td>Minimum Bid Amount</td>
+          <td><input type="text" id="minBidAmt" value="25"/></td>
+        </tr>
+        <tr>
+          <td>Duration in Hours</td>
+          <td><input type="text" id="endTimeInHours" value="1"/></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td ><a href="#" onclick="createAuction()" class="btn btn-primary">Create Auction</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>  
+  <h3 onclick="getAuctionDetails()">Auction Details</h3>
+  <div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Auction Id</td>
+          <td id="div_auction_id"></td>
+        </tr>
+        <!--
+        <tr>
+          <td>Owner Id</td>
+          <td id="div_owner_id"></td>
+        </tr>
+      -->
+        <tr>
+          <td>Total Tickets</td>
+          <td id="div_total_tkt"></td>
+        </tr>
+        <tr>
+          <td>Tickets Per Person</td>
+          <td id="div_tkt_per_person"></td>
+        </tr>
+        <tr>
+          <td>Last Bidder</td>
+          <td id="div_last_bidder"></td>
+        </tr>
+        <tr>
+          <td>Last Bid</td>
+          <td id="div_last_bid"></td>
+        </tr>
+
+        <tr>
+          <td>Highest Bidder</td>
+          <td id="div_highest_bidder"></td>
+        </tr>
+        <tr>
+          <td>Highest Bid</td>
+          <td id="div_highest_bid"></td>
+        </tr>
+        <tr>
+          <td>Tickets Remaining</td>
+          <td id="div_tkt_balance"></td>
+        </tr>
+        <tr>
+          <td>Auction Status</td>
+          <td id="div_status"></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><a href="#" onclick="getAuctionDetails()" class="btn btn-primary">Refresh Auction Info</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Bid For Ticket</h3>
+    <div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Bidder Address</td>
+          <td><input type="text" id="bidder" value="0xd7f08d1f95c7b0F1Fa608CaD692d40A14305053e" /></td>
+        </tr>
+        <tr>
+          <td>Bid Amount</td>
+          <td><input type="text" id="bidAmount" value='25'/></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><a href="#" onclick="bid()" class="btn btn-primary">Bid</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!--
   <div class="table-responsive">
     <table class="table table-bordered">
       <thead>
@@ -69,10 +198,17 @@
 </br>
   <a href="#" onclick="bid()" class="btn btn-primary">Bid&nbsp;</a><input type="text" id="bidAmount" value="638" />&nbsp;for&nbsp;
   <input type="text" id="bidder" value="0xd7f08d1f95c7b0F1Fa608CaD692d40A14305053e" />
-
+-->
 
 </body>
 <script src="https://cdn.rawgit.com/ethereum/web3.js/develop/dist/web3.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"></script>
 <script src="app.js"></script>
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+  $( function() {
+    $( "#accordion" ).accordion();
+  } );
+  </script>
 </html>
