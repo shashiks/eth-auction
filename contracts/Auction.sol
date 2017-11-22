@@ -1,9 +1,10 @@
 pragma solidity ^0.4.11;
 
 
-contract Product {
+contract Auction {
 
 	bool public isActive = true;
+
 	//dont want external to modify this	
 	uint32 private ticketId = 1; 
     uint32 public balanceTikets;
@@ -13,8 +14,8 @@ contract Product {
     uint32 public lastBid;
     uint32 public currentBidCount;
     uint32 public highestBid;
-    //create this from constructor or some logic later
-    uint32 public maxBidsPerTicket = 5; 
+    //can create this from constructor or some logic 
+    uint32 public maxBidsPerTicket = 2; 
     uint256 public endTime;
 
 
@@ -26,9 +27,9 @@ contract Product {
     //stores history of allotment
     mapping( address => Ticket[]) public allotedTickets;
 
-    //mapping bids for each ticketId 
-    // So this will have history of all bids for a ticket
-    mapping( uint32 => mapping(address => uint32)) public bids;
+    //mapping bids for each ticketId  as : TicketId => (bidder => bidAmt)
+    //this will have history of all bids for a ticket
+    mapping( uint32 => mapping( address => uint32)) public bids;
 
 
     event BidCreated(address bidder, uint32 bidAmount, uint32 pTicketId);
@@ -51,9 +52,20 @@ contract Product {
         _;
 	}
 
+	/**
+	* Actually this can be done from Escrow
+	* but for now this will do
+	*/
+    modifier ownerOnly() {
+    	require(msg.sender == auctioneer);
+        _;
+	}
 
 
-	function Product (address owner, uint32 pTicketPerPerson, uint32 pTotalTickets, uint32 pMinimumBid, uint256 pEndTime ) public {
+	/**
+	* Constructor. Initialized all vars to params
+	*/
+	function Auction (address owner, uint32 pTicketPerPerson, uint32 pTotalTickets, uint32 pMinimumBid, uint256 pEndTime ) public {
 		auctioneer = owner;
 		ticketPerPerson = pTicketPerPerson;
 		totalTickets = pTotalTickets;
@@ -66,13 +78,9 @@ contract Product {
 		
 	}
 
-	function getBidFor(address bidderAddress) public returns (uint32) {
-		return bids[ticketId][bidderAddress];
-	}
-
-
+	
 	/*
-	* Bid for a Product in this auction. Following rules apply
+	* Bid for a Ticket in this auction. Following rules apply
 	*  <p> bidder cannot be auctioneer
 	*  <p> bidder should not have received max tickets per person
 	*  <p> amount should be greater than last bid of this bidder
@@ -85,7 +93,9 @@ contract Product {
 		uint32 errCode = validBid(msg.sender, bidAmt);
 		if( errCode != 0) {
 			BidError(msg.sender, bidAmt, errCode);
+
 		} else {
+
 			bids[ticketId][msg.sender] = bidAmt;
 			lastBidder = msg.sender;
 			lastBid = bidAmt;
@@ -106,16 +116,12 @@ contract Product {
 		}
 	}
 
-	function raiseEvents(uint32 bidAmt) {
-		
-		BidError(msg.sender, bidAmt, 10);
 
-		bids[ticketId][msg.sender] = bidAmt;
-		BidCreated(msg.sender, bidAmt, ticketId);
-		HighestBid(msg.sender, highestBid, ticketId);
 
-	}
-
+	/*
+	* Assign current ticket to the last highest bidder
+	* and reset all the values for next ticket
+	*/
 	function allotAndReset() internal {
 
 		//evalute and check if bidderHasQuota call is required
@@ -132,7 +138,7 @@ contract Product {
 		lastBidder = 0x0;
 		currentBidCount = 0;
 		//if all tickets are alloted disable auction
-		if(balanceTikets <= 0) {
+		if(balanceTikets == 0) {
 			isActive = false;
 		}
 
@@ -144,7 +150,7 @@ contract Product {
 	* 0 means success and everything is ok
 	* TODO: document each error code at contract level
 	*/
-	function validBid(address bidder, uint32 amt) internal returns (uint32) {
+	function validBid(address bidder, uint32 amt) internal constant returns (uint32) {
 
 		// auction has expired
 		if(!isActive) {
@@ -174,5 +180,31 @@ contract Product {
 			return 103;
 		} 
 	}
+
+	/**
+	* get the bid amount for this bidder for current ticket.
+	* Currently used only for tests from console
+	*/
+	function getBidFor(address bidderAddress) public constant returns (uint32) {
+		return bids[ticketId][bidderAddress];
+	}
+
+	/**
+	* Get the total payable amount for given address
+	*/
+    function getPayableBidsTotal(address bidder) public constant returns (uint32 bidTotal) {
+        			
+			Ticket [] storage tkts = allotedTickets[bidder];
+			if(tkts.length > 0) {
+				uint32 totalAmt = 0;
+				for(uint32 i=0; i< tkts.length; i++) {
+					if(tkts[i].owner ==  bidder)
+						totalAmt += tkts[i].pricePaid;
+				}
+				return totalAmt;
+			}
+			return 0;
+
+    }
 
 }

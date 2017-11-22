@@ -3,27 +3,92 @@ import "../stylesheets/app.css"
 import { default as Web3} from 'web3';
 import { default as contract } from 'truffle-contract'
 // Import our contract artifacts and turn them into usable abstractions.
-import productFactory from '../../build/contracts/ProductFactory.json'
-import product from '../../build/contracts/Product.json'
+import auctionFactory from '../../build/contracts/AuctionFactory.json'
+import auction from '../../build/contracts/Auction.json'
+import escrow from '../../build/contracts/AuctionEscrow.json'
 
-var ProductFactory = contract(productFactory);
-var Product = contract(product);
-
-//get these from web3 later
-// var miner_ac = "0xf09564Ca641B9E3517dFc6f2e3525e7078eEa5A8"; // an address
-// var auctioneer = "0xE7D4fb00EA93027a10101A48F9b791626f232Ac6"; // another address
-// var bidder_1 = "0xd7f08d1f95c7b0F1Fa608CaD692d40A14305053e"; // another address
-// var bidder_2 = "0x3ad78130DCff93d6c942c37aA45F0A004A0Ffe0C"; // another address
+var AuctionFactory = contract(auctionFactory);
+var Auction = contract(auction);
+var AuctionEscrow = contract(escrow);
 
 var watching = 0; //start watching to events only once
 
 $( document ).ready(function() {
    window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8080"));
-   ProductFactory.setProvider(web3.currentProvider);
-   Product.setProvider(web3.currentProvider);
+   AuctionFactory.setProvider(web3.currentProvider);
+   Auction.setProvider(web3.currentProvider);
+   AuctionEscrow.setProvider(web3.currentProvider);
    console.warn("webb3 connected  " + web3 );
 
 });
+
+
+window.getPayable = function() {
+	let buyer = $('#buyer').val();
+	let auctioneerId = $('#auctioneerId').val();
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(id) {
+			var auction = Auction.at(id);
+			console.log('buyer' + buyer);
+			console.log('auction ' + id);
+
+			auction.getPayableBidsTotal.call(buyer, {from:buyer}).then(function(amt) {
+				console.log("Amtount " + amt);
+				$("#div_payable").html(amt+"");
+			});
+		});
+	});
+}
+
+
+window.buyTicket = function() {
+	let auctioneerId = $('#auctioneerId').val();
+	let buyer = $('#buyer').val();
+	var orderAmt = "";
+	var divObj = document.getElementById("div_payable");
+    if ( divObj ){
+        if ( divObj.textContent ){ // FF
+            orderAmt = divObj.textContent;
+        } else {  // IE           
+            orderAmt = divObj.innerText;
+        } 
+    }  
+	console.log("buyers::: "+ buyer + " " + orderAmt); 
+
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
+			factInstance.getEscrow.call(auctionId).then(function(escId) {
+				var pEscrow = AuctionEscrow.at(escId);
+
+				web3.personal.unlockAccount( buyer, 'welcome123', 10);
+
+				pEscrow.payForTickets.sendTransaction({from: buyer, value: orderAmt, gasLimit: 1400000, gasPrice: 2000000}).then(function(txnHash) {
+					console.log('txnHas' + txnHash);
+					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
+						// console.log("Got result from block confirmation");
+						if(receipt) {
+							console.log("receipt blockHash " + receipt.blockHash);
+							console.log("receipt blockNumber " + receipt.blockNumber);
+							console.log("receipt transactionIndex " + receipt.transactionIndex);
+							// console.log("receipt logs " + receipt.logs);
+							// if(receipt.logs) {
+							// 	for(var i=0; i< receipt.logs.length; i++) {
+							// 		console.log("A log " + receipt.logs[i].toString);
+							// 	}
+							// }
+							
+						} else {
+							console.log("err from poll " + err);
+						}
+					});
+				});
+			});
+
+		});
+	});
+	
+}
+
 
 window.awaitBlockConsensus = function(txWeb3, txhash, blockCount, repeatInSeconds, numPollAttempts, callback) {
    // var txWeb3 = web3s[0];
@@ -116,18 +181,16 @@ window.bid = function() {
 	//ask user to enter password
 	web3.personal.unlockAccount( bidder, 'welcome123', 10);
 
-	ProductFactory.deployed().then(function(factInstance) {
-		factInstance.getProduct.call(auctioneerId).then(function(itemId) {
-			var bidProduct = Product.at(itemId);
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(itemId) {
+			var bidAuction = Auction.at(itemId);
 			// var blockNumber = 0;
 			//register for all events of Auction
 
-			var txnHash = bidProduct.bid.sendTransaction(bidAmount, {gas: 1400000, from:bidder}).then(function(txnHash) {
-				// console.log('Txn hash ' + txnHash);
+			var txnHash = bidAuction.bid.sendTransaction(bidAmount, {gas: 4000000, from:bidder}).then(function(txnHash) {
 				
-				//Magic Numbers :watch for 3 confirmations at 4000ms intervals for 4 repetitions
-				//these three params should be configs
-				// change to 12 confirmations eventually
+				//Magic Numbers : wait for 3 confirmations at 4000ms intervals for 4 repetitions
+				//these three params should be configs. change to 12 confirmations eventually
 				awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 					// console.log("Got result from block confirmation");
 					if(receipt) {
@@ -154,14 +217,14 @@ window.bid = function() {
 
 
 
-window.watchEvents = function(bidProduct, itemId) {
+window.watchEvents = function(bidAuction, itemId) {
 
-	var bidEvent = bidProduct.BidCreated({fromBlock: 'latest', toBlock: 'latest', address : itemId});
+	var bidEvent = bidAuction.BidCreated({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     bidEvent.watch(function(error, result){
         if(!error) {
         	let prdBid = "<p>Bid received for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
         	+ " from address " + result.args.bidder;
-        	console.log("product bid msg " + prdBid); 
+        	console.log("Auction bid msg " + prdBid); 
         	$("#msg").append(prdBid);
         	// console.log("BidCreated bidder " + result.args.bidder);
         	// console.log("BidCreated Amt " +result.args.bidAmount.toString());
@@ -173,7 +236,7 @@ window.watchEvents = function(bidProduct, itemId) {
         	console.log(error);
     });
 
-	var highEvent = bidProduct.HighestBid({fromBlock: 'latest', toBlock: 'latest', address : itemId});
+	var highEvent = bidAuction.HighestBid({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     highEvent.watch(function(error, result){
         if(!error) {
         	let highBid = "<p>Highest bid received for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
@@ -190,7 +253,7 @@ window.watchEvents = function(bidProduct, itemId) {
         	console.log(error);
     });
 
-	var errEvent = bidProduct.BidError({fromBlock: 'latest', toBlock: 'latest', address : itemId});
+	var errEvent = bidAuction.BidError({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     errEvent.watch(function(error, result){
         if(!error) {
 			let errBid = "<p>Invalid Bid for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
@@ -206,7 +269,7 @@ window.watchEvents = function(bidProduct, itemId) {
         	console.log(error);
     });
 
-    var tktEvent = bidProduct.TicketAlloted({fromBlock: 'latest', toBlock: 'latest', address : itemId});
+    var tktEvent = bidAuction.TicketAlloted({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     tktEvent.watch(function(error, result){
         if(!error) {
         	// console.log("tktEvent bidder " + result.args.bidder);
@@ -229,11 +292,11 @@ window.watchEvents = function(bidProduct, itemId) {
 window.getAuctionDetails = function() {
 		let auctioneerId = $('#auctioneerId').val();
 		
-		ProductFactory.deployed().then(function(factoryInstance) {
-			factoryInstance.getProduct.call(auctioneerId).then(function(result) {
+		AuctionFactory.deployed().then(function(factoryInstance) {
+			factoryInstance.getAuction.call(auctioneerId).then(function(result) {
 				// console.warn("address of auction for  " + auctioneerId + " is " + result);
 				$("#div_auction_id").html(result);
-				var myAuction = Product.at(result);
+				var myAuction = Auction.at(result);
 
 				if(!watching) {
 					watchEvents(myAuction, result);
@@ -290,12 +353,9 @@ window.createAuction = function( ) {
 		let validity = $('#endTimeInHours').val();
 		let minAmt = $('#minBidAmt').val();
 		web3.personal.unlockAccount( auctioneerHash, 'welcome123', 5);
-		ProductFactory.deployed().then(function(factoryInstance) {
-			// console.log("Req  " + auctioneerHash);
-			// console.log("Fact " + factoryInstance.address);
+		AuctionFactory.deployed().then(function(factoryInstance) {
 			//get the params from UI
-			factoryInstance.createProduct( tktPerPerson, totalTkts, minAmt, validity,{gas:1500000,from:auctioneerHash}).then(function(contractId) {
-				// console.warn("Product Auction created at " + contractId);
+			factoryInstance.createAuction( tktPerPerson, totalTkts, minAmt, validity,{gas:1500000,from:auctioneerHash}).then(function(contractId) {
 				$("#div_auction_id").html( contractId);
 			});
 		});
