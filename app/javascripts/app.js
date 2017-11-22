@@ -196,14 +196,7 @@ window.bid = function() {
 					if(receipt) {
 						console.log("receipt blockHash " + receipt.blockHash);
 						console.log("receipt blockNumber " + receipt.blockNumber);
-						console.log("receipt transactionIndex " + receipt.transactionIndex);
-						// console.log("receipt logs " + receipt.logs);
-						// if(receipt.logs) {
-						// 	for(var i=0; i< receipt.logs.length; i++) {
-						// 		console.log("A log " + receipt.logs[i].toString);
-						// 	}
-						// }
-						
+						console.log("receipt transactionIndex " + receipt.transactionIndex);						
 					} else {
 						console.log("err from poll " + err);
 					}
@@ -226,9 +219,6 @@ window.watchEvents = function(bidAuction, itemId) {
         	+ " from address " + result.args.bidder;
         	console.log("Auction bid msg " + prdBid); 
         	$("#msg").append(prdBid);
-        	// console.log("BidCreated bidder " + result.args.bidder);
-        	// console.log("BidCreated Amt " +result.args.bidAmount.toString());
-        	// console.log("BidCreated tkt id " + result.args.pTicketId.toString());
         	// console.log("BidCreated tkt id wasRemoved " + result.removed);
         	// console.log("Block number for bid event " + result.blockNumber.toString);
         }
@@ -243,11 +233,6 @@ window.watchEvents = function(bidAuction, itemId) {
         	+ " from address " + result.args.bidder;
         	console.log("high bid msg " + highBid); 
         	$("#msg").append(highBid);
-
-        	// console.log("highEvent bidder " + result.args.bidder);
-        	// console.log("highEvent Amt " +result.args.bidAmount.toString());
-        	// console.log("highEvent bidder tkt " + result.args.pTicketId.toString());
-        	// console.log("highEvent tkt id wasRemoved " + result.removed);
         }
         else
         	console.log(error);
@@ -256,14 +241,10 @@ window.watchEvents = function(bidAuction, itemId) {
 	var errEvent = bidAuction.BidError({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     errEvent.watch(function(error, result){
         if(!error) {
-			let errBid = "<p>Invalid Bid for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
-        	+ " from address " + result.args.bidder + " Error code " +  result.args.errorCode.toString();
+			let errBid = "<p color='red'>Invalid Bid for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
+        	+ " from address " + result.args.bidder + " Error:  " +  getErrMsg(result.args.errorCode.toString()) + "</p>";
         	console.log("errBid bid msg " + errBid); 
         	$("#msg").append(errBid);
-        	// console.log("errEvent bidder " + result.args.bidder);
-        	// console.log("errEvent Amt " +result.args.bidAmount.toString());
-        	// console.log("errEvent Err code " + result.args.errorCode.toString());
-        	// console.log("errEvent tkt id wasRemoved " + result.removed);
         }
         else
         	console.log(error);
@@ -272,10 +253,11 @@ window.watchEvents = function(bidAuction, itemId) {
     var tktEvent = bidAuction.TicketAlloted({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     tktEvent.watch(function(error, result){
         if(!error) {
-        	// console.log("tktEvent bidder " + result.args.bidder);
-        	// console.log("tktEvent Amt " +result.args.bidAmount.toString());
-        	// console.log("tktEvent tkt Id " + result.args.pTicketId.toString());
-        	// console.log("tktEvent tkt id wasRemoved " + result.removed);
+			let tktBid = "<p>Ticket Id " + result.args.pTicketId + " alloted to " + result.args.bidder
+        	+ " for amount " + result.args.bidAmount ;
+        	console.log("tkt alloted msg " + tktBid); 
+        	$("#msg").append(tktBid);
+
         }
         else
         	console.log(error);
@@ -283,6 +265,22 @@ window.watchEvents = function(bidAuction, itemId) {
 
 
  } /// watch Events
+
+
+function getErrMsg(errCode){
+	
+	var resMsg = errCode + " : ";
+	if(errCode == '100' ) {
+		resMsg += "Bid Amount cannot be less than minimum bid amount";
+	} else if(errCode == '101'|| errCode == '500') {
+		resMsg += "The Auction has expired!";
+	} else if(errCode == '102') {
+		resMsg += "Bidder has been alloted maximum allowed tickets for this Auction";
+	} else if(errCode == '103') {
+		resMsg += "Current bid cannot be less than previous bid for this ticket";
+	}
+	return resMsg;
+}
 
 
 

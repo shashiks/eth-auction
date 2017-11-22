@@ -4,8 +4,6 @@ import './Auction.sol';
 
 /**
 * Instance of this will be per auction
-* It holds all the money during bidding of each auction
-* and finally refunds the balances as applicable to the bidders
 */
 contract AuctionEscrow {
 
