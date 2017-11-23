@@ -14,7 +14,7 @@ contract Auction {
     uint32 public lastBid;
     uint32 public currentBidCount;
     uint32 public highestBid;
-    //can create this from constructor or some logic 
+    //create this from constructor or some logic later
     uint32 public maxBidsPerTicket = 2; 
     uint256 public endTime;
 
@@ -189,11 +189,8 @@ contract Auction {
 		return bids[ticketId][bidderAddress];
 	}
 
-	/**
-	* Get the total payable amount for given address
-	*/
     function getPayableBidsTotal(address bidder) public constant returns (uint32 bidTotal) {
-        			
+        			//get the biider address
 			Ticket [] storage tkts = allotedTickets[bidder];
 			if(tkts.length > 0) {
 				uint32 totalAmt = 0;
