@@ -2,6 +2,8 @@ pragma solidity ^0.4.11;
 
 import './Auction.sol';
 import './AuctionEscrow.sol';
+import './EtktEscrow.sol';
+
 
 /**
 * The usefullness of this is to be considered. As a new deployment is still required

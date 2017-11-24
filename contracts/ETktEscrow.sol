@@ -1,13 +1,14 @@
 pragma solidity ^0.4.11;
 
 import './Auction.sol';
+import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 
 /**
 * Instance of this will be per auction
 * It holds all the money during bidding of each auction
 * and finally refunds the balances as applicable to the bidders
 */
-contract AuctionEscrow {
+contract ETktEscrow is usingOraclize{
 
 	address private auctioneer;
 	Auction private auction;
