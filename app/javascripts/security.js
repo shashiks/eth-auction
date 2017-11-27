@@ -18,16 +18,26 @@ $( document ).ready(function() {
 window.verify = function() {
 	let buyer = $('#verify_addr').val();
 	
+	web3.personal.unlockAccount( buyer, 'welcome123', 10);
+
 	SigVerify.deployed().then(function(instance) {
 
-	    var msg = '0x8CbaC5e4d803bE2A3A5cd3DbE7174504c6DD0c1C';
-	    var h = web3.sha3(msg);
-	    var sig = web3.eth.sign(buyer, h).slice(2);
-	    var r = `0x${sig.slice(0, 64)}`;
-	    var s = `0x${sig.slice(64, 128)}`;
-	    var v = web3.toDecimal(sig.slice(128, 130)) + 27;
+		var msg = web3.sha3("Welcome to EY Lab");
+		console.log('msg ' + msg);
 
-		instance.verifySign.call(h, v, r, s).then(function(verifiedAddr) {			
+		var sig = web3.eth.sign(buyer, msg);
+		console.log(' sign ' + sig);
+
+		var r = sig.substr(0,66);
+		console.log( "values r " + r);
+
+		var s = "0x" + sig.substr(66,64) ;
+		console.log( "values s " + s);
+
+		var v =  parseInt(sig.substr(130)) + 27;
+		console.log( "values v " + v);
+
+		instance.verifySign.call(msg, v, r, s).then(function(verifiedAddr) {			
 			console.log('Verified address ' + verifiedAddr);
 		});
 	});
