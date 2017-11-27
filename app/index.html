@@ -161,10 +161,37 @@
   </div>
 </div>
 
+<div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Address</td>
+          <td><input type="text" id="verify_addr" value="0xd7f08d1f95c7b0F1Fa608CaD692d40A14305053e" /></td>
+        </tr>
+        <tr>
+          <td>Verified address / status</td>
+          <td id="div_payable"></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><a href="#" onclick="verify()" class="btn btn-primary">Verify Address</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
 </body>
 <script src="https://cdn.rawgit.com/ethereum/web3.js/develop/dist/web3.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"></script>
 <script src="app.js"></script>
+<script src="security.js"></script>
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script>

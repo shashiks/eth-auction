@@ -10,8 +10,8 @@ import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 */
 contract ETktEscrow is usingOraclize{
 
-	address private auctioneer;
-	Auction private auction;
+    address private auctioneer;
+    Auction private auction;
 
     uint public someValue;
     
@@ -42,44 +42,44 @@ contract ETktEscrow is usingOraclize{
         uint256 releaseDate;
     }
  
-	function AuctionEscrow(address _actioneer, Auction _auction) public {
-		auctioneer = _actioneer;
-		auction = _auction;
-	}
+    function AuctionEscrow(address _actioneer, Auction _auction) public {
+        auctioneer = _actioneer;
+        auction = _auction;
+    }
 
     /**
      * Called by the customer for him to recieve the tickets
      * 
      */
-	function payForTickets() public payable {
+    function payForTickets() public payable {
 
-		//check that auction has expired
-		if(!auction.isActive()) {
-		    uint txnVal = msg.value;
-		    uint32 bidTotal = auction.getPayableBidsTotal(msg.sender);
-			//accept payment for all tickets only
-			if(bidTotal > 0 && bidTotal == txnVal) {
-			    Payment p = payments[msg.sender];
-			    if(!p.released) { //allow only once
-			        payments[msg.sender] = Payment({amount: msg.value, released: false, releaseDate: 0});
-			    }
-			} else {//dont accept money if total is less
-			    revert();
-			}
-		}
-	}
-	
-	/**
-	 * If buyer has paid then value will be greater than 0
-	*/
-	function hasPaid (address buyer) public constant returns (bool paymentStatus) {
-	    return !payments[buyer].released && payments[buyer].amount > 0 ;
-	}
-	
-// 	function isPaymentReleased (address buyer) public constant returns (bool releaseStatus) {
-// 	    return payments[buyer].released && payments[buyer].amount == 0;
-// 	}
-	
+        //check that auction has expired
+        if(!auction.isActive()) {
+            uint txnVal = msg.value;
+            uint32 bidTotal = auction.getPayableBidsTotal(msg.sender);
+            //accept payment for all tickets only
+            if(bidTotal > 0 && bidTotal == txnVal) {
+                Payment p = payments[msg.sender];
+                if(!p.released) { //allow only once
+                    payments[msg.sender] = Payment({amount: msg.value, released: false, releaseDate: 0});
+                }
+            } else {//dont accept money if total is less
+                revert();
+            }
+        }
+    }
+    
+    /**
+     * If buyer has paid then value will be greater than 0
+    */
+    function hasPaid (address buyer) public constant returns (bool paymentStatus) {
+        return !payments[buyer].released && payments[buyer].amount > 0 ;
+    }
+    
+//  function isPaymentReleased (address buyer) public constant returns (bool releaseStatus) {
+//      return payments[buyer].released && payments[buyer].amount == 0;
+//  }
+    
 
     /**
      * The public function which the auctioneer will call to move funds
@@ -123,7 +123,7 @@ contract ETktEscrow is usingOraclize{
         }
     }
 
-	function __callback(bytes32 myid, string result, bytes proof) {
+    function __callback(bytes32 myid, string result, bytes proof) {
         if (msg.sender != oraclize_cbAddress()) throw;
         //for an original url the value of received ticket should b checked here
         completeReleasePayment(myid, result);

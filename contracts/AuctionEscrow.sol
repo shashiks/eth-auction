@@ -9,19 +9,18 @@ import './Auction.sol';
 */
 contract AuctionEscrow {
 
-	address private auctioneer;
-	Auction private auction;
+    address private auctioneer;
+    Auction private auction;
 
-    uint public someValue;
     
-    event newOraclizeQuery(string description);
-    event newDieselPrice(uint price);
-    
-    event PaymentFailed(address buyer, uint256 price);
     event TicketPaid(address buyer, uint256 price);
-    event TestPrice(uint256 price);
-    
-    modifier acutioneerOnly {
+    event TicketReceipt(address buyer);
+    event SelfDestructError(string evtMsg);
+    event DoublePayError(address buyer, string evtMsg);
+    event PaymentRelease(address buyer);
+    event PaymentReleaseFail(address buyer, uint256 price);
+
+    modifier auctioneerOnly {
         if(msg.sender != auctioneer) revert();
         _;
     }
@@ -31,102 +30,119 @@ contract AuctionEscrow {
      * Once buyer confirms recieving ticket 
      * the funds are moved to auctioneer
     */
-    mapping (address => Payment) private payments;
-    
-    mapping (bytes32 => address) private releaseRequests;
-    
+    mapping (address => Payment) public payments;
+    address [] public arrBuyers;
+
     struct Payment {
         uint256 amount;
         bool released;
+        bool tktReceived;
         uint256 releaseDate;
     }
  
-	function AuctionEscrow(address _actioneer, Auction _auction) public {
-		auctioneer = _actioneer;
-		auction = _auction;
-	}
+ 
+    function AuctionEscrow(address _actioneer, Auction _auction) public {
+        auctioneer = _actioneer;
+        auction = _auction;
+    }
+    
+    /**
+     * If buyer has paid then value will be greater than 0
+    */
+    function hasPaid (address buyer) public constant returns (bool paymentStatus) {
+        return payments[buyer].released == false && payments[buyer].amount > 0;
+    }
+
+    
+    function recordTicketReceipt() public {
+        //dont update ticket status if not paid
+        assert( hasPaid(msg.sender) == true && payments[msg.sender].tktReceived == false);
+        //update status 
+        payments[msg.sender].tktReceived = true;
+        TicketReceipt(msg.sender);
+    }
+    
+    // /** Dont accept payment on contract. Cleanup method would avoid this problem*/
+    // function () { throw; }
+    
+    /**
+     * Atleast at this point the assumption is that someone 
+     * cannot call selfdestruct directly on contract even if 
+     * this contract does not override it
+     */
+    function cleanup() public auctioneerOnly {
+        if(canDelete() == false) {
+            SelfDestructError("Unreleased tickets exist. Cannot destruct");
+            revert();
+        }
+        selfdestruct(auctioneer);
+    }
+    
+    function canDelete() private returns (bool del) {
+        for(uint256 i = 0; i < arrBuyers.length; i++) {
+            Payment p = payments[arrBuyers[i]];
+            if(p.released == false || p.amount > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Called by the customer for him to recieve the tickets
      * 
      */
-	function payForTickets() public payable {
+    function payForTickets() public payable {
 
-		//check that auction has expired
-		if(!auction.isActive()) {
-		    uint txnVal = msg.value;
-		    uint32 bidTotal = auction.getPayableBidsTotal(msg.sender);
-			//accept payment for all tickets only
-			if(bidTotal > 0 && bidTotal == txnVal) {
-			    Payment p = payments[msg.sender];
-			    if(!p.released) { //allow only once
-			        payments[msg.sender] = Payment({amount: msg.value, released: false, releaseDate: 0});
-			    }
-			} else {//dont accept money if total is less
-			    revert();
-			}
-		}
-	}
-	
-	/**
-	 * If buyer has paid then value will be greater than 0
-	*/
-	function hasPaid (address buyer) public constant returns (bool paymentStatus) {
-	    return !payments[buyer].released && payments[buyer].amount > 0 ;
-	}
-	
-// 	function isPaymentReleased (address buyer) public constant returns (bool releaseStatus) {
-// 	    return payments[buyer].released && payments[buyer].amount == 0;
-// 	}
-	
+        //check that auction has expired
+        if(!auction.isActive()) {
+                Payment storage p = payments[msg.sender];
+                if(!p.released && p.amount == 0) { //allow only once
+                    uint txnVal = msg.value;
+                    uint32 bidTotal = auction.getPayableBidsTotal(msg.sender);
+                    //accept payment for all tickets only
+                    if(bidTotal > 0 && bidTotal == txnVal) {
+
+                        payments[msg.sender] = Payment({amount: msg.value, released: false, tktReceived : false, releaseDate: 0});
+                        arrBuyers.push(msg.sender);
+                        TicketPaid(msg.sender, p.amount);
+                        
+                    } else {//dont accept money if total is less
+                        revert();
+                    }
+                } else {
+                    DoublePayError(msg.sender, "Buyer has paid earlier");
+                    revert();
+                }
+        }
+    }
+
+
 
     /**
      * The public function which the auctioneer will call to move funds
      * to his account
      */
-    function releasePayment(address buyer) public acutioneerOnly payable{
+    function releasePayment(address buyer) public auctioneerOnly {
         
-        //assume that this operation calls a ticket api which indicates the
-        //status of e-Ticket recived by the customer
-        // if (oraclize_getPrice("URL") > this.balance) {
-        //     newOraclizeQuery("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
-        // } else {
-            newOraclizeQuery("Oraclize query was sent, standing by for the answer..");
-            bytes32 id = oraclize_query("URL", "xml(https://www.fueleconomy.gov/ws/rest/fuelprices).fuelPrices.diesel");
-            releaseRequests[id] = buyer;
-        // }
+        if(hasPaid(buyer) && payments[buyer].tktReceived == true) {
+            bool sent = auctioneer.send(payments[buyer].amount);
+            if(sent) {
+                payments[buyer].amount = 0;
+                payments[buyer].released = true;
+                payments[buyer].releaseDate = now;
+                PaymentRelease(buyer);
+            } else {
+                PaymentReleaseFail(buyer, payments[buyer].amount);
+            }
+        } else {
+            revert();
+        }
 
     }
     
-    function completeReleasePayment( bytes32 reqId, string reqRes) private {
-        //TODO: check if reqRes indicated ticket paid
-        address buyer = releaseRequests[reqId];
-        if(buyer == 0) {
-            revert();
-        }
-        
-        Payment p = payments[buyer];
-        if((p.released) || p.amount == 0 )
-            revert();
-            
-        bool sent = auctioneer.send(p.amount);
-        if(sent) {
-            TicketPaid(buyer, p.amount);
-            //reset values
-            p.amount = 0;
-            p.released = true;
-            p.releaseDate = now;
-        } else {
-            PaymentFailed(buyer, p.amount);
-            revert();
-        }
-    }
+  
 
-	function __callback(bytes32 myid, string result, bytes proof) {
-        if (msg.sender != oraclize_cbAddress()) throw;
-        //for an original url the value of received ticket should b checked here
-        completeReleasePayment(myid, result);
-        
-      }
+
 
 }
