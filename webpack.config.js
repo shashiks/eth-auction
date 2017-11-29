@@ -2,7 +2,7 @@ const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  entry: ['./app/javascripts/app.js','./app/javascripts/security.js'],
+  entry: [ './app/javascripts/res_poll.js' ,'./app/javascripts/security.js', './app/javascripts/app.js'],
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: 'app.js'

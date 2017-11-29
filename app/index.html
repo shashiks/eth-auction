@@ -8,8 +8,18 @@
 </head>
 <title>Auction Admin</title>
 <body class="container">
+
+<div class="overlay"> &nbsp;
+</div>
+<div id="slideout">
+    <div id="slidecontent" >
+      <input type='password' id='passphrase' />
+      <input type='hidden' id='nextfunc' />
+      <a href="#" onclick="doAuthFunc()" class="btn btn-primary">Sign</a>
+    </div>
+</div>
+
   <div class="table-responsive" id='msg'>
-    
   </div>
   <div id="accordion">
   <h3>Create An Auction</h3>
@@ -44,7 +54,7 @@
         </tr>
         <tr>
           <td></td>
-          <td ><a href="#" onclick="createAuction()" class="btn btn-primary">Create Auction</a></td>
+          <td ><a href="#" onclick="getAuth('createAuction')" class="btn btn-primary">Create Auction</a></td>
         </tr>
       </tbody>
     </table>
@@ -63,12 +73,6 @@
           <td>Auction Id</td>
           <td id="div_auction_id"></td>
         </tr>
-        <!--
-        <tr>
-          <td>Owner Id</td>
-          <td id="div_owner_id"></td>
-        </tr>
-      -->
         <tr>
           <td>Total Tickets</td>
           <td id="div_total_tkt"></td>
@@ -129,7 +133,7 @@
         </tr>
         <tr>
           <td></td>
-          <td><a href="#" onclick="bid()" class="btn btn-primary">Bid</a></td>
+          <td><a href="#" onclick="getAuth('bid')" class="btn btn-primary">Bid</a></td>
         </tr>
       </tbody>
     </table>
@@ -154,7 +158,7 @@
         </tr>
         <tr>
           <td><a href="#" onclick="getPayable()" class="btn btn-primary">Get Total Payable</td>
-          <td><a href="#" onclick="buyTicket()" class="btn btn-primary">Buy Tickets</a></td>
+          <td><a href="#" onclick="getAuth('buyTicket')" class="btn btn-primary">Buy Tickets</a></td>
         </tr>
       </tbody>
     </table>
@@ -197,5 +201,6 @@
   $( function() {
     $( "#accordion" ).accordion();
   } );
+
   </script>
 </html>

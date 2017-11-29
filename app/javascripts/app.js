@@ -11,7 +11,10 @@ var AuctionFactory = contract(auctionFactory);
 var Auction = contract(auction);
 var AuctionEscrow = contract(escrow);
 
-var watching = 0; //start watching to events only once
+var watching = 0; //start watching to events only 
+var passwd = false;
+
+
 
 $( document ).ready(function() {
    window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8080"));
@@ -19,6 +22,8 @@ $( document ).ready(function() {
    Auction.setProvider(web3.currentProvider);
    AuctionEscrow.setProvider(web3.currentProvider);
    console.warn("webb3 connected  " + web3 );
+
+   $("#div_pass").hide();
 
 });
 
@@ -41,7 +46,7 @@ window.getPayable = function() {
 }
 
 
-window.buyTicket = function() {
+window.buyTicket = function(phrase) {
 	let auctioneerId = $('#auctioneerId').val();
 	let buyer = $('#buyer').val();
 	var orderAmt = "";
@@ -54,16 +59,17 @@ window.buyTicket = function() {
         } 
     }  
 	console.log("buyers::: "+ buyer + " " + orderAmt); 
+	if(!unlockaccount(buyer, phrase)) {
+		return;
+	}
 
 	AuctionFactory.deployed().then(function(factInstance) {
 		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
 			factInstance.getEscrow.call(auctionId).then(function(escId) {
 				var pEscrow = AuctionEscrow.at(escId);
 
-				web3.personal.unlockAccount( buyer, 'welcome123', 10);
-
 				pEscrow.payForTickets.sendTransaction({from: buyer, value: orderAmt, gasLimit: 1400000, gasPrice: 2000000}).then(function(txnHash) {
-					console.log('txnHas' + txnHash);
+					console.log('txnHash : ' + txnHash);
 					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
 						if(receipt) {
@@ -90,85 +96,12 @@ window.buyTicket = function() {
 }
 
 
-window.awaitBlockConsensus = function(txWeb3, txhash, blockCount, repeatInSeconds, numPollAttempts, callback) {
-   // var txWeb3 = web3s[0];
-   var startBlock = Number.MAX_SAFE_INTEGER;
-   var interval;
-   var stateEnum = { start: 1, mined: 2, awaited: 3, confirmed: 4, unconfirmed: 5 };
-   var savedTxInfo;
-   var attempts = 0;
-
-   var pollState = stateEnum.start;
-
-   var poll = function() {
-     if (pollState === stateEnum.start) {
-     	// console.log('poll State ' + pollState);
-       txWeb3.eth.getTransaction(txhash, function(e, txInfo) {
-         if (e || txInfo == null) {
-           return; // XXX silently drop errors
-         }
-         if (txInfo.blockHash != null) {
-           startBlock = txInfo.blockNumber;
-           savedTxInfo = txInfo;
-           // console.log("mined");
-           pollState = stateEnum.mined;
-         }
-       });
-     }
-     else if (pollState == stateEnum.mined) {
-     	// console.log('poll State ' + pollState);
-         txWeb3.eth.getBlockNumber(function (e, blockNum) {
-           if (e) {
-             return; // XXX silently drop errors
-           }
-           // console.log("blockNum: ", blockNum);
-           if (blockNum >= (blockCount + startBlock)) {
-             pollState = stateEnum.awaited;
-           }
-         });
-     }
-    else if (pollState == stateEnum.awaited) {
-    	// console.log('poll State ' + pollState);
-         txWeb3.eth.getTransactionReceipt(txhash, function(e, receipt) {
-           if (e || receipt == null) {
-             return; // XXX silently drop errors.  TBD callback error?
-           }
-           // confirm we didn't run out of gas
-           // XXX this is where we should be checking a plurality of nodes.  TBD
-           clearInterval(interval);
-           // console.log("Got recepit while polling " + receipt);
-           if (receipt.gasUsed >= savedTxInfo.gas) {
-             pollState = stateEnum.unconfirmed;
-             callback(new Error("we ran out of gas, not confirmed!"), null);
-           } else {
-             pollState = stateEnum.confirmed;
-             callback(null, receipt);
-           }
-       });
-     } else {
-       throw(new Error("We should never get here, illegal state: " + pollState));
-     }
-
-     attempts++;
-     if (attempts > numPollAttempts) {
-       clearInterval(interval);
-       pollState = stateEnum.unconfirmed;
-       callback(new Error("Timed out, not confirmed"), null);
-     }
-   };
-
-   //poll for updates every XX ms
-   interval = setInterval(poll, repeatInSeconds);
-   poll();
- };
-
-
 /**
  Bid for the user id entered in the bidder box and:
  1. start listening for events
  2. check for transation confirmation upto X blocks for Y seconds
 */
-window.bid = function() {
+window.bid = function(phrase) {
 
 	//clear old messages
 	$('#msg').html("");
@@ -177,9 +110,9 @@ window.bid = function() {
 	let auctioneerId = $('#auctioneerId').val();
 	
 	// console.log("Bid details " + bidAmount + " " + bidder + " " + auctioneerId);
-
-	//ask user to enter password
-	web3.personal.unlockAccount( bidder, 'welcome123', 10);
+	if(!unlockaccount(bidder, phrase)) {
+		return;
+	}
 
 	AuctionFactory.deployed().then(function(factInstance) {
 		factInstance.getAuction.call(auctioneerId).then(function(itemId) {
@@ -241,10 +174,10 @@ window.watchEvents = function(bidAuction, itemId) {
 	var errEvent = bidAuction.BidError({fromBlock: 'latest', toBlock: 'latest', address : itemId});
     errEvent.watch(function(error, result){
         if(!error) {
-			let errBid = "<p color='red'>Invalid Bid for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
-        	+ " from address " + result.args.bidder + " Error:  " +  getErrMsg(result.args.errorCode.toString()) + "</p>";
+			let errBid = "<p><font color='red'>Invalid Bid for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
+        	+ " from address " + result.args.bidder + " Error:  " +  getErrMsg(result.args.errorCode.toString()) + "</font></p>";
         	console.log("errBid bid msg " + errBid); 
-        	$("#msg").append(errBid);
+        	$("#msg").html(errBid);
         }
         else
         	console.log(error);
@@ -340,19 +273,61 @@ window.getAuctionDetails = function() {
 } // getDetails
 
 
-window.createAuction = function( ) {
+window.getAuth = function(nextFunc) {
+
+	$("#nextfunc").val(nextFunc);
+	$("#slideout").animate({left: "0px" }, {queue: false, duration: 500}).addClass("popped");
+    $(".overlay").fadeIn(500);
+	
+}
+
+window.doAuthFunc = function() {
+
+		let confSig = $("#passphrase").val();
+		let f = $("#nextfunc").val();
+		
+		$("#slideout").animate({left:'-500px'}, {queue: false, duration: 500}).removeClass("popped");
+        $(".overlay").fadeOut(500);
+		//clear val
+		$("#passphrase").val('');
+		window[f](confSig);
+
+}
+
+window.unlockaccount = function(id, phrase) {
+		
+		try {
+			web3.personal.unlockAccount(id, phrase, 5);
+		} catch(error) {
+			
+			let err = "<p><font color='red'>" + error +"</font></p>";
+        	console.log('eer  ' + error);
+        	$("#msg").html(err);
+			return false;
+		}
+		return true;
+}
+
+
+
+window.createAuction = function(phrase ) {
+
+	$("#msg").text('');
 	//llokup values later from controls
 	try {
-		$("#div_auction_id").html( "Creating Auction ...");
+		
 		//$("#candidate").val("");
 		let auctioneerHash = $('#auctioneerId').val();
 		let totalTkts = $('#totakTickets').val();
 		let tktPerPerson = $('#ticketsPerPerson').val();
 		let validity = $('#endTimeInHours').val();
 		let minAmt = $('#minBidAmt').val();
-		web3.personal.unlockAccount( auctioneerHash, 'welcome123', 5);
+
+		if(!unlockaccount(auctioneerHash, phrase)) {
+			return;
+		}
+		
 		AuctionFactory.deployed().then(function(factoryInstance) {
-			//get the params from UI
 			factoryInstance.createAuction( tktPerPerson, totalTkts, minAmt, validity,{gas:1500000,from:auctioneerHash}).then(function(contractId) {
 				$("#div_auction_id").html( contractId);
 			});
