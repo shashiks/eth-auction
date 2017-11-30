@@ -15,7 +15,7 @@ contract AuctionFactory {
 
 	// This is dummy holder so that changes to Product are loaded along with factory
 	// This number will match the migration number
-	uint256 public version = 2;
+	uint256 public version = 16;
 
 	//restrict call to create produt later using this owner only
 	address factoryOwner;

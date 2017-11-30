@@ -138,7 +138,7 @@
       </tbody>
     </table>
   </div>
-    <h3>Pay For Ticket</h3>
+  <h3>Pay For Ticket</h3>
     <div class="table-responsive" >
     <table class="table table-bordered">
       <thead>
@@ -158,14 +158,40 @@
         </tr>
         <tr>
           <td><a href="#" onclick="getPayable()" class="btn btn-primary">Get Total Payable</td>
-          <td><a href="#" onclick="getAuth('buyTicket')" class="btn btn-primary">Buy Tickets</a></td>
+          <td><a href="#" onclick="buyTicket()" class="btn btn-primary">Buy Tickets</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Receive and Settle Tickets</h3>
+    <div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Buyer Address</td>
+          <td><input type="text" id="tktReceiptId" value="0xd7f08d1f95c7b0F1Fa608CaD692d40A14305053e" /></td>
+        </tr>
+        <tr>
+          <td><a href="#" onclick="getAuth('confirmTktReceipt')" class="btn btn-primary">Confirm Ticket Receipt</td>
+          <td><a href="#" onclick="getAuth('releaseFunds')" class="btn btn-primary">Release Funds to Auctionner</a></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><a href="#" onclick="getAuth('clearAuction')" class="btn btn-primary">Remove Auction</a></td>
         </tr>
       </tbody>
     </table>
   </div>
 </div>
 
-<div class="table-responsive" >
+
+<!-- <div class="table-responsive" >
     <table class="table table-bordered">
       <thead>
         <tr>
@@ -188,7 +214,7 @@
         </tr>
       </tbody>
     </table>
-  </div>
+  </div> -->
 
 
 </body>

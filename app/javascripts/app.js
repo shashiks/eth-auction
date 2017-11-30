@@ -46,20 +46,12 @@ window.getPayable = function() {
 }
 
 
-window.buyTicket = function(phrase) {
+window.clearAuction  = function(phrase) {
+
 	let auctioneerId = $('#auctioneerId').val();
-	let buyer = $('#buyer').val();
-	var orderAmt = "";
-	var divObj = document.getElementById("div_payable");
-    if ( divObj ){
-        if ( divObj.textContent ){ // FF
-            orderAmt = divObj.textContent;
-        } else {  // IE           
-            orderAmt = divObj.innerText;
-        } 
-    }  
-	console.log("buyers::: "+ buyer + " " + orderAmt); 
-	if(!unlockaccount(buyer, phrase)) {
+	
+	// console.log("Bid details " + bidAmount + " " + bidder + " " + auctioneerId);
+	if(!unlockaccount(auctioneerId, phrase)) {
 		return;
 	}
 
@@ -67,8 +59,14 @@ window.buyTicket = function(phrase) {
 		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
 			factInstance.getEscrow.call(auctionId).then(function(escId) {
 				var pEscrow = AuctionEscrow.at(escId);
+				
+				pEscrow.SelfDestructError().watch ( (err, response) => {  //set up listener for the AuctionClosed Event
+			        //once the event has been detected, take actions as desired
+			        $("#msg").html('Err removing Auction : ' + response.args.evtMsg );
+      			});
 
-				pEscrow.payForTickets.sendTransaction({from: buyer, value: orderAmt, gasLimit: 1400000, gasPrice: 2000000}).then(function(txnHash) {
+
+				pEscrow.cleanup.sendTransaction( {from: auctioneerId, gasLimit: 1400000, gasPrice: 2000000}).then(function(txnHash) {
 					console.log('txnHash : ' + txnHash);
 					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
@@ -85,6 +83,208 @@ window.buyTicket = function(phrase) {
 							
 						} else {
 							console.log("err from poll " + err);
+						}
+					});
+				});
+			});
+
+		});
+	});
+
+
+}
+
+window.releaseFunds = function(phrase) {
+
+	let auctioneerId = $('#auctioneerId').val();
+	let buyer = $('#tktReceiptId').val();
+	
+	console.log(" details " +  buyer + " " + auctioneerId);
+	if(!unlockaccount(auctioneerId, phrase)) {
+		return;
+	}
+
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
+			factInstance.getEscrow.call(auctionId).then(function(escId) {
+				var pEscrow = AuctionEscrow.at(escId);
+				
+				pEscrow.PaymentRelease().watch ( (err, response) => {  
+			        //once the event has been detected, take actions as desired
+			        $("#msg").html('Funds of tickets for buyer : ' + response.args.buyer + " released to auctioneer " + auctioneerId);
+      			});
+
+				pEscrow.PaymentReleaseFail().watch ( (err, response) => {  
+			        //once the event has been detected, take actions as desired
+			        $("#msg").html('Relase Funds failed of tickets for buyer : ' + response.args.buyer + " with total price " + response.args.price);
+      			});
+
+				pEscrow.releasePayment.sendTransaction(buyer, {from: auctioneerId, gas: 400000}).then(function(txnHash) {
+					console.log('txnHash : ' + txnHash);
+					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
+						// console.log("Got result from block confirmation");
+						if(receipt) {
+							console.log("receipt blockHash " + receipt.blockHash);
+							console.log("receipt blockNumber " + receipt.blockNumber);
+							console.log("receipt transactionIndex " + receipt.transactionIndex);
+							// console.log("receipt logs " + receipt.logs);
+							// if(receipt.logs) {
+							// 	for(var i=0; i< receipt.logs.length; i++) {
+							// 		console.log("A log " + receipt.logs[i].toString);
+							// 	}
+							// }
+							
+						} else {
+							console.log("err from poll " + err);
+						}
+					});
+				});
+			});
+
+		});
+	});
+
+
+}
+
+
+
+window.watchTkt = function(escrow, id) {
+
+	console.log("Watching tkt " + escrow + " esc id " + id)
+	var event = escrow.TicketReceipt({fromBlock: 'latest', toBlock: 'latest', address : id});
+    event.watch(function(error, result){
+        if(!error) {
+
+
+        	// let prdBid = "<p>Bid received for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
+        	// + " from address " + result.args.bidder;
+        	// console.log("Auction bid msg " + prdBid); 
+        	// $("#msg").append(prdBid);
+        	console.log("e tkt event " + result.args.buyer);
+        	console.log("e tkt event " + result.removed);
+        	console.log("e tkt event " + result.blockNumber.toString);
+        }
+        else
+        	console.log("tkt event err " + error);
+    });
+
+}
+
+window.confirmTktReceipt = function(phrase) {
+
+	let auctioneerId = $('#auctioneerId').val();
+	let buyer = $('#tktReceiptId').val();
+	
+	console.log("confirmTktReceipt details " + buyer + " " + auctioneerId);
+	if(!unlockaccount(buyer, phrase)) {
+		return;
+	}
+
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
+			factInstance.getEscrow.call(auctionId).then(function(escId) {
+				var pEscrow = AuctionEscrow.at(escId);
+				console.log(" conftkt auctionId " + auctionId + " esc id :: " + escId);
+				
+				watchTkt(pEscrow, escId);
+
+				pEscrow.recordTicketReceipt.sendTransaction({from: buyer, gas: 4000000}).then(function(txnHash) {
+					console.log(' recordTicketReceipt txnHash : ' + txnHash);
+					awaitBlockConsensus(web3, txnHash, 2, 4000, 4, function(err, receipt) { 
+						// console.log("Got result from block confirmation");
+						if(receipt) {
+							console.log("recordTicketReceipt receipt blockHash " + receipt.blockHash);
+							console.log("recordTicketReceipt receipt blockNumber " + receipt.blockNumber);
+							console.log("recordTicketReceipt receipt transactionIndex " + receipt.transactionIndex);
+							// console.log("receipt logs " + receipt.logs);
+							// if(receipt.logs) {
+							// 	for(var i=0; i< receipt.logs.length; i++) {
+							// 		console.log("A log " + receipt.logs[i].toString);
+							// 	}
+							// }
+							
+						} else {
+							console.log("err from poll " + err);
+						}
+					});
+				});
+			});
+
+		});
+	});
+}
+
+
+window.watchPurchase = function(escrow, id) {
+
+	console.log("Watching purchase tkt " + escrow + " esc id " + id)
+	var tPaidEvent = escrow.TicketPaid({fromBlock: 'latest', toBlock: 'latest', address : id});
+    tPaidEvent.watch(function(error, result){
+        if(!error) {
+
+
+        	// let prdBid = "<p>Bid received for Ticket Id " + result.args.pTicketId + " of amount " + result.args.bidAmount
+        	// + " from address " + result.args.bidder;
+        	// console.log("Auction bid msg " + prdBid); 
+        	// $("#msg").append(prdBid);
+        	console.log("pur tkt recpt " + result.args.buyer);
+        	console.log("pur tkt recpt " + result.args.price);
+        	console.log("pur tkt recpt " + result.removed);
+        	console.log("pur tkt recpt " + result.blockNumber.toString);
+        }
+        else
+        	console.log("pur tkt event err " + error);
+    });
+}
+
+window.buyTicket = function(phrase) {
+	let auctioneerId = $('#auctioneerId').val();
+	let buyer = $('#buyer').val();
+	var orderAmt = "";
+	var divObj = document.getElementById("div_payable");
+    if ( divObj ){
+        if ( divObj.textContent ){ // FF
+            orderAmt = divObj.textContent;
+        } else {  // IE           
+            orderAmt = divObj.innerText;
+        } 
+    }  
+	console.log("buyer ::: "+ buyer + " amt " + orderAmt); 
+	// if(!unlockaccount(buyer, phrase)) {
+	// 	return;
+	// }
+
+	web3.personal.unlockAccount(buyer, 'welcome123', 15);
+
+	AuctionFactory.deployed().then(function(factInstance) {
+		factInstance.getAuction.call(auctioneerId).then(function(auctionId) {
+			factInstance.getEscrow.call(auctionId).then(function(escId) {
+				var pEscrow = AuctionEscrow.at(escId);
+
+				watchPurchase(pEscrow, escId);
+
+				pEscrow.hasPaid.call(buyer).then(function(status) {
+					console.log("Buyer " + buyer + " hasPaid " + status);
+				});
+
+				pEscrow.payForTickets.sendTransaction({from: buyer, value: orderAmt, gas: 4000000}).then(function(buytxnHash) {
+					console.log('buyTicket txnHash : ' + buytxnHash);
+					awaitBlockConsensus(web3, buytxnHash, 2, 2000, 4, function(err, receipt) { 
+						// console.log("Got result from block confirmation");
+						if(receipt) {
+							console.log("buyTicket receipt blockHash " + receipt.blockHash);
+							console.log("buyTicket receipt blockNumber " + receipt.blockNumber);
+							console.log("buyTicket receipt transactionIndex " + receipt.transactionIndex);
+							// console.log("receipt logs " + receipt.logs);
+							// if(receipt.logs) {
+							// 	for(var i=0; i< receipt.logs.length; i++) {
+							// 		console.log("A log " + receipt.logs[i].toString);
+							// 	}
+							// }
+							
+						} else {
+							console.log("buyTicket err from poll " + err);
 						}
 					});
 				});
