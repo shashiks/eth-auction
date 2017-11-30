@@ -15,6 +15,38 @@ $( document ).ready(function() {
 });
 
 
+window.getAuth = function(nextFunc) {
+
+	$("#nextfunc").val(nextFunc);
+	$("#slideout").animate({left: "0px" }, {queue: false, duration: 500}).addClass("popped");
+    $(".overlay").fadeIn(500);
+	
+}
+
+window.doAuthFunc = function() {
+
+		let confSig = $("#passphrase").val();
+		let f = $("#nextfunc").val();
+		
+		$("#slideout").animate({left:'-500px'}, {queue: false, duration: 500}).removeClass("popped");
+        $(".overlay").fadeOut(500);
+		//clear val
+		$("#passphrase").val('');
+		window[f](confSig);
+
+}
+
+window.unlockaccount = function(id, phrase) {
+		
+		try {
+			web3.personal.unlockAccount(id, phrase, 5);
+		} catch(error) {
+			writeMsg("Cannot unlock account " + error, true, false);
+			return false;
+		}
+		return true;
+}
+
 window.verify = function() {
 	let buyer = $('#verify_addr').val();
 	
