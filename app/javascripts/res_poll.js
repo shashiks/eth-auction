@@ -57,6 +57,8 @@ window.awaitBlockConsensus = function(txWeb3, txhash, blockCount, repeatInSecond
            clearInterval(interval);
            // console.log("Got recepit while polling " + receipt);
            console.log(" chk gas " + receipt.gasUsed + " avlbl " + savedTxInfo.gas);
+
+           //<<<<<<<<<<<<<< check the txn status using receipt.status instead of gas >>>>>>>>>>>>>>>
            if (receipt.gasUsed >= savedTxInfo.gas) {
              pollState = stateEnum.unconfirmed;
              callback(new Error("we ran out of gas, not confirmed!"), null);

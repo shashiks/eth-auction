@@ -17,7 +17,7 @@ var passwd = false;
 
 
 $( document ).ready(function() {
-   window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8080"));
+   window.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:9090"));
    AuctionFactory.setProvider(web3.currentProvider);
    Auction.setProvider(web3.currentProvider);
    AuctionEscrow.setProvider(web3.currentProvider);
@@ -91,6 +91,7 @@ window.clearAuction  = function(phrase) {
 					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
 						if(receipt) {
+							console.log("receipt status " + receipt.status);
 							console.log("receipt blockHash " + receipt.blockHash);
 							console.log("receipt blockNumber " + receipt.blockNumber);
 							console.log("receipt transactionIndex " + receipt.transactionIndex);
@@ -140,6 +141,7 @@ window.releaseFunds = function(phrase) {
 					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
 						if(receipt) {
+							console.log("releaseFunds Receipt status " + receipt.status);
 							console.log("receipt blockHash " + receipt.blockHash);
 							console.log("receipt blockNumber " + receipt.blockNumber);
 							console.log("receipt transactionIndex " + receipt.transactionIndex);
@@ -198,6 +200,7 @@ window.confirmTktReceipt = function(phrase) {
 					awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
 						if(receipt) {
+							console.log("recordTicketReceipt Receipt status " + receipt.status);
 							console.log("recordTicketReceipt receipt blockHash " + receipt.blockHash);
 							console.log("recordTicketReceipt receipt blockNumber " + receipt.blockNumber);
 							console.log("recordTicketReceipt receipt transactionIndex " + receipt.transactionIndex);
@@ -262,6 +265,7 @@ window.buyTicket = function(phrase) {
 					awaitBlockConsensus(web3, buytxnHash, 3, 4000, 4, function(err, receipt) { 
 						// console.log("Got result from block confirmation");
 						if(receipt) {
+							console.log("buyTicket Receipt status " + receipt.status);
 							console.log("buyTicket receipt blockHash " + receipt.blockHash);
 							console.log("buyTicket receipt blockNumber " + receipt.blockNumber);
 							console.log("buyTicket receipt transactionIndex " + receipt.transactionIndex);
@@ -308,6 +312,7 @@ window.bid = function(phrase) {
 				awaitBlockConsensus(web3, txnHash, 3, 4000, 4, function(err, receipt) { 
 					// console.log("Got result from block confirmation");
 					if(receipt) {
+						console.log("receipt Receipt status " + receipt.status);
 						console.log("receipt blockHash " + receipt.blockHash);
 						console.log("receipt blockNumber " + receipt.blockNumber);
 						console.log("receipt transactionIndex " + receipt.transactionIndex);						
