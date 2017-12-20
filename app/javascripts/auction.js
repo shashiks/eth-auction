@@ -2,6 +2,7 @@
 import "../stylesheets/app.css"
 import { default as Web3} from 'web3';
 import { default as contract } from 'truffle-contract'
+
 // Import our contract artifacts and turn them into usable abstractions.
 import auctionFactory from '../../build/contracts/AuctionFactory.json'
 import auction from '../../build/contracts/Auction.json'
@@ -26,7 +27,6 @@ $( document ).ready(function() {
    $("#div_pass").hide();
 
 });
-
 
 window.clear = function () {
 	$("#msg").text('');

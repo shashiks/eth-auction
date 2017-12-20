@@ -23,9 +23,71 @@
   <div class="table-responsive" id='msg'>
   </div>
   <div id="accordion">
+
+ <h3>Save Tickets As Image</h3>
+  <div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Select File</td>
+          <td><input type='file' id='ticket_img'/></td>
+        </tr>
+        <tr>
+          <td>Image File Hash</td>
+          <td id="div_tkt_img_hash"></td>
+        </tr>
+        <tr>
+          <td>Image Ticket Data</td>
+          <td id="div_tkt_img_data"><img id="img_tkt_view" src='' /></td>
+        </tr>
+        <tr>
+          <td><a href="#" onclick="writeImg()" class="btn btn-primary">Write Ticket Image</td>
+          <td><a href="#" onclick="readImg()" class="btn btn-primary">Read Ticket Image</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!--
+ <h3>Save Tickets As Text</h3>
+  <div class="table-responsive" >
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ticket Content</td>
+          <td><input type="text" id="ticket_txt" value="My Auction Ticket" /></td>
+        </tr>
+        <tr>
+          <td>Content Id</td>
+          <td id="div_tkt_hash"></td>
+        </tr>
+        <tr>
+          <td>Ticket Data</td>
+          <td id="div_tkt_data"></td>
+        </tr>
+        <tr>
+          <td><a href="#" onclick="writeFile()" class="btn btn-primary">Write Tickets</td>
+          <td><a href="#" onclick="readFile()" class="btn btn-primary">Read Tickets</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  -->
+
   <h3>Create An Auction</h3>
- <div class="table-responsive">
- <table class="table table-bordered">
+  <div class="table-responsive">
+    <table class="table table-bordered">
       <thead>
         <tr>
           <th>Field</th>
@@ -192,7 +254,11 @@
 </div>
 
 
-<!-- <div class="table-responsive" >
+<!-- 
+  The html section below along with security.js has the syntax for encrypting content using user key
+  and decrypting it on server client side 
+
+  <div class="table-responsive" >
     <table class="table table-bordered">
       <thead>
         <tr>
